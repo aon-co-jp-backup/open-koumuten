@@ -1,0 +1,15 @@
+[package]
+name = "koumuten-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "open-koumuten: AI間取り提案・違法性チェックシミュレーションのコアロジック。免責: 一級建築士等の有資格者による最終確認前のドラフト提案であり、建築確認申請等に使える法的に確定した設計ではない。"
+
+[dependencies]
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "blocking", "json"] }
+cg-cad-core = { path = "../../../open-cg-cad/crates/cg-cad-core" }
