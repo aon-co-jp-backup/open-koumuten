@@ -151,3 +151,32 @@ docs).
 - **Changes to open-fudousan**: none were made, per instructions.
 - **Inter-process HTTP for open-cg-cad**: deferred until `open-cg-cad`
   exposes an HTTP API of its own.
+
+
+---
+
+## Update 2026-08-23 — CPU SIMD applicability review (conclusion: not applicable, no code changes)
+
+Alongside extending the shared
+[`open-cpu`](https://github.com/aon-co-jp/open-cpu) crate, this repository
+was reviewed for anything worth accelerating.
+**Conclusion: nothing in this repository itself qualifies.**
+
+Reasons, based on reading the actual code:
+
+- About 1,150 lines of Rust across two crates: `koumuten-core` (floor-plan
+  proposals, legality checks, structural checks, LLM commentary) and
+  `koumuten-api` (HTTP directly on hyper, port 8090).
+- The search in `floor_plan.rs` is a nested loop over floor-count and
+  coverage-fraction candidates — on the order of a dozen combinations.
+  `layout_rooms` splits a footprint into roughly six rooms per floor, and
+  the loops in `legal_check.rs` run over well under a hundred elements.
+- The only genuinely numeric work, structural analysis, is delegated from
+  `structural_check.rs` to `cg-cad-core::analyze_structure` — it **is not
+  computed in this repository**. Optimizing it therefore belongs in
+  `open-cg-cad`, and indeed that is where this session's optimization was
+  made (tunnel micro-pressure-wave index, O(n^2) → O(n)).
+
+No `open-cpu` dependency was added. Revisit this section if floor-plan
+search is ever extended from exhaustive enumeration to a real optimizer
+(e.g. genetic algorithms) with candidate counts in the tens of thousands.

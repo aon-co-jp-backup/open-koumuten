@@ -63,6 +63,32 @@ open-koumuten/
 
 ## HANDOFF
 
+- **2026-08-23 CPU SIMD 適用可否の調査(結論: 適用対象外、コード変更なし)**:
+  エコシステム共通の CPU 命令セット検出・ディスパッチ基盤
+  [`open-cpu`](https://github.com/aon-co-jp/open-cpu) の拡張に伴い、
+  本リポジトリにも適用先があるかを調査した。
+  **結論: 本リポジトリ自身には適用対象になる処理は無い。**
+
+  理由(実コードを確認した上での判断):
+  - Rust コードは全体で約 1150 行。`koumuten-core`(間取り提案・
+    法規チェック・構造チェック・LLM コメント)と `koumuten-api`
+    (hyper 直叩きの HTTP、ポート 8090)の 2 crate。
+  - `floor_plan.rs` の探索は階数候補 × 建蔽率候補の二重ループだが
+    組み合わせ数は十数通り。`layout_rooms` も 1 フロア 6 部屋程度。
+    `legal_check.rs` のループも要素数が 2 桁未満。
+  - 数値計算らしい処理(構造解析)は `structural_check.rs` から
+    `cg-cad-core::analyze_structure` へ委譲しており、**本リポジトリ内で
+    計算していない**。したがって高速化するなら `open-cg-cad` 側で行うのが
+    正しい(実際、今回 `open-cg-cad` 側でトンネル微気圧波指標の
+    O(n^2) → O(n) 改善を実施した。詳細は `open-cg-cad/CLAUDE.md` 参照)。
+
+  **無理に SIMD を入れることはしない**という判断を明記しておく。
+  `open-cpu` への依存も追加していない。
+  - 次にすべきこと: 間取り探索を全数探索から本格的な最適化(遺伝的
+    アルゴリズム等)へ拡張し、候補数が数万オーダーになった段階で
+    初めてベクトル化が検討対象になる。その時点で本節を見直すこと。
+
+
 - **2026-08-21 新規作成・段階1(間取り提案・違法性チェック)実装完了**:
   - **構成**: `Cargo.toml`(workspace)+`crates/koumuten-core`
     (`site_input`/`floor_plan`/`legal_check`/`structural_check`/
