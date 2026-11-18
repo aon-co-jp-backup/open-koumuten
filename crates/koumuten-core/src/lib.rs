@@ -29,7 +29,7 @@
 //!    耐震シミュレーションAPIを呼び出し、間取り案が構造的に成立するかの
 //!    簡易検証を行う(同一プロセス内のcrate依存、実プロセス間通信では
 //!    ない)。
-//! 5. [`llm_comment`]: `aruaru-llm`の`POST /v1/generate`を使い、提案文言
+//! 5. [`llm_comment`]: `aruaru-llm`の`POST /aruaru_llm.v1.Llm/Generate`(Connect)を使い、提案文言
 //!    (ユーザー向けの自然文コメント)を生成する。接続失敗時は定型文へ
 //!    フォールバックする。
 

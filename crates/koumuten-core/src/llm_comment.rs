@@ -1,10 +1,10 @@
-//! `aruaru-llm`の`POST /v1/generate`を使い、間取り提案のユーザー向け
+//! `aruaru-llm`の`POST /aruaru_llm.v1.Llm/Generate`(Connect)を使い、間取り提案のユーザー向け
 //! 自然文コメントを生成する。接続失敗時は定型文へフォールバックする
 //! (`aruaru-llm`が起動していなくても呼び出し側の動作確認ができるように
 //! するため)。
 //!
 //! **正直な開示**: `open-cg-cad::llm_explain`と同じ設計パターン
-//! (`reqwest`のblockingクライアントで`POST /v1/generate`を呼ぶ)を踏襲
+//! (`reqwest`のblockingクライアントで`POST /aruaru_llm.v1.Llm/Generate`(Connect)を呼ぶ)を踏襲
 //! している。GPT-2 124M(対話ファインチューニング無し)を使うため、
 //! 生成される文言の品質・一貫性は保証されない——`aruaru-llm`自身が
 //! 明記している限界と同じ。
@@ -57,11 +57,15 @@ pub fn fallback_comment_ja(proposal: &FloorPlanProposal) -> String {
     )
 }
 
-/// `aruaru-llm`の`POST /v1/generate`を呼び出し、提案コメントを取得する。
+/// `aruaru-llm`の`POST /aruaru_llm.v1.Llm/Generate`(Connect)を呼び出し、提案コメントを取得する。
 /// 接続失敗・エラー応答の場合は`Err`ではなく`fallback_comment_ja`を返す
 /// (呼び出し側がaruaru-llm未起動でも動作確認できるようにするため)。
 pub fn generate_comment(base_url: &str, proposal: &FloorPlanProposal) -> String {
-    match try_generate_comment(base_url, proposal) {
+    // reqwest::blocking は tokio のランタイム内で直接使うとパニックする(ハンドラが非同期のため)。
+    // 専用スレッドで実行し、どのコンテキストからでも安全に呼べるようにする。
+    let result = std::thread::scope(|s| s.spawn(|| try_generate_comment(base_url, proposal)).join());
+    let result = result.unwrap_or_else(|_| Err(LlmCommentError::ErrorResponse("worker thread panicked".to_string())));
+    match result {
         Ok(text) => text,
         Err(_) => fallback_comment_ja(proposal),
     }
@@ -71,7 +75,8 @@ fn try_generate_comment(base_url: &str, proposal: &FloorPlanProposal) -> Result<
     let prompt = build_prompt(proposal);
     let client = reqwest::blocking::Client::builder().timeout(std::time::Duration::from_secs(30)).build()?;
     let response = client
-        .post(format!("{base_url}/v1/generate"))
+        .post(format!("{}/aruaru_llm.v1.Llm/Generate", base_url.trim_end_matches('/')))
+        .header("x-tenant", "open-koumuten")
         .json(&serde_json::json!({ "prompt": prompt, "max_new_tokens": 32 }))
         .send()?;
 
