@@ -1,3 +1,3 @@
 source: aon-co-jp/open-koumuten
-commit: 6a7ef1e365fff890bee5fd8f6f872354bcd7dfb7
-updated: 2026-11-25T04:48:33Z
+commit: 1b2d059d690aed1d7336ecb276b37e56b3e170bf
+updated: 2026-11-26T11:37:13Z
