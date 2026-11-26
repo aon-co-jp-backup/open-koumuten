@@ -265,3 +265,8 @@ curl -X POST http://127.0.0.1:8090/v1/proposals \
 - **WASM по-прежнему остаётся технологией для интерфейса.** Изменилось лишь то, что вызываемый им API теперь построен на Connect.
 - Интерфейсы, форма которых задана внешним стандартом (ACME, обратные вызовы OAuth, вебхуки сторонних сервисов, проверки работоспособности, статические файлы, OTLP), остаются обычным HTTP.
 - **Если есть сомнения — выбирайте Connect.**
+
+
+## 2026-11-26 x-tenant と呼び出し側のConnect化 / x-tenant and Connect callers
+**日本語**: aruaru-llm の呼び出しを旧 `/v1/generate` から Connect の `Llm/Generate` へ移し、`x-tenant: open-koumuten` を付けました(`fbc0487`)。同時に、非同期の処理の中で `reqwest::blocking` を直接使ってパニックしていた元からの不具合を、専用スレッドで動かす形に直しました(修正前は同じ3試験が失敗、いまは全成功)。**未了**: 自前の `POST /v1/proposals` はまだ REST(未移行)、VPSでは動いていません。
+**English**: The aruaru-llm call moved from legacy `/v1/generate` to Connect `Llm/Generate` with `x-tenant: open-koumuten` (`fbc0487`). A pre-existing panic (blocking `reqwest` inside an async handler; the same 3 tests failed before) was fixed by running it on a dedicated thread; all tests pass. **Open**: its own `POST /v1/proposals` is still REST; it is not running on the VPS.
